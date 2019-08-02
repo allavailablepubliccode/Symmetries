@@ -1,7 +1,7 @@
 function particlesim(symmetric)
 % set input 'symmetric' to 1 for symmetric case and 0 for invariant case
 
-tpoints = 256;                            	% number of time points
+tpoints = 200;                            	% number of time points
 theta   = 8*pi/tpoints:8*pi/tpoints:8*pi;  	% angle
 
 % ellipse constants
@@ -18,15 +18,15 @@ eps = 0.1;
 % generate radius as function of angle
 %--------------------------------------------------------------------------
 if symmetric ~= 1
-    r = a*(1-e^2)./(1+e*cos(theta));
+    r = a*(1-e^2)./(1+e*cos(theta));        % ellipse
 else
-    r = 1./(A*exp(k*theta+eps));
+    r = 1./(A*exp(k*theta+eps));            % equiangular spiral
 end
 
 xcoord = r.*cos(theta);                     % x-coordinate
 ycoord = r.*sin(theta);                   	% y-coordinate
 
-% make figure
+% draw trajectory
 %--------------------------------------------------------------------------
 figure;
 plot(xcoord,ycoord)
@@ -55,14 +55,18 @@ E.s  = 1/2;                            	% smoothness of fluctuations
 
 % prior parameters
 %--------------------------------------------------------------------------
+
+% alpha
 if symmetric ~= 1
-    pE.a  = -3/2;
+    pE.a  = -3/2;   % inverse square force law (Kepler exponent)
 else
-    pE.a  = 2;
+    pE.a  = 2;      % inverse cube force law (symmetric when alpha = 2)
 end
-pE.d  = 0;
-pE.c0 = 1;
-pE.c2 = 1;
+pE.d  = 0;          % delta (deviation from symmetry)
+
+% coefficients
+pE.c0 = 1/64;
+pE.c2 = 1/64;
 
 % prior variance
 %--------------------------------------------------------------------------
@@ -78,14 +82,14 @@ DEM.M(1).x  = x;                        % initial states
 DEM.M(1).f  = f;                        % equations of motion
 DEM.M(1).g  = g;                        % observation mapping
 DEM.M(1).pE = pE;                       % model parameters
-DEM.M(1).pC = diag(spm_vec(pC))*16;     % variance
-DEM.M(1).V  = exp(12);                  % precision of observation noise
-DEM.M(1).W  = exp(12);                  % precision of state noise
+DEM.M(1).pC = diag(spm_vec(pC))*(1/128);     % variance
+DEM.M(1).V  = exp(8);                  % precision of observation noise
+DEM.M(1).W  = exp(8);                  % precision of state noise
 
 % second level causes or exogenous forcing term
 %--------------------------------------------------------------------------
 DEM.M(2).v  = 0;                        % initial causes
-DEM.M(2).V  = exp(16);                  % precision of exogenous causes
+DEM.M(2).V  = exp(8);                  % precision of exogenous causes
 
 % data and known input
 %--------------------------------------------------------------------------
@@ -104,7 +108,7 @@ model{2} = 'invariant';
 % apply precise shrinkage priors
 %--------------------------------------------------------------------------
 PC{1} = pC;  PC{1}.d = 0;           % reduced model (scale symmetric)
-PC{2} = pC;                         % full model (scale invariant)      
+PC{2} = pC;                         % full model (scale invariant)
 
 %  evaluate the evidence for these new models or prior constraints
 %--------------------------------------------------------------------------
@@ -121,6 +125,7 @@ end
 %--------------------------------------------------------------------------
 F = F - min(F);
 
+close all
 spm_figure('GetWin','Model Comparison');clf;
 subplot(2,2,1), bar(F,'c')
 title('Log evidence','FontSize',16)
