@@ -98,13 +98,13 @@ LAP = spm_DEM(DEM);
 
 % use Bayesian model reduction to test different hypotheses
 %==========================================================================
-model{1} = 'invariant';
-model{2} = 'symmetric';
+model{1} = 'symmetric';
+model{2} = 'invariant';
 
 % apply precise shrinkage priors
 %--------------------------------------------------------------------------
-PC{1} = pC;                             % full model (scale invariant)
-PC{2} = pC; PC{2}.d = 0;                % reduced model (scale symmetric)
+PC{1} = pC;  PC{1}.d = 0;           % reduced model (scale symmetric)
+PC{2} = pC;                         % full model (scale invariant)      
 
 %  evaluate the evidence for these new models or prior constraints
 %--------------------------------------------------------------------------
