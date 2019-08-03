@@ -30,6 +30,7 @@ ycoord = r.*sin(theta);                   	% y-coordinate
 %--------------------------------------------------------------------------
 figure;
 plot(xcoord,ycoord)
+title('Trajectory')
 drawnow
 
 % model states
@@ -52,13 +53,14 @@ E.n  = 4;                              	% embedding dimension
 E.d  = 1;                              	% data embedding
 E.nN = 8;                              	% number of iterations
 E.s  = 1/2;                            	% smoothness of fluctuations
+E.dt = 1;
 
 % prior parameters
 %--------------------------------------------------------------------------
 
 % alpha
 if symmetric ~= 1
-    pE.a  = -3/2;   % inverse square force law (Kepler exponent)
+    pE.a  = 3/2;    % inverse square force law (Kepler exponent)
 else
     pE.a  = 2;      % inverse cube force law (symmetric when alpha = 2)
 end
@@ -77,19 +79,19 @@ pC.c2   = 1;
 
 % first level state space model
 %--------------------------------------------------------------------------
-DEM.M(1).E  = E;                        % filtering parameters
-DEM.M(1).x  = x;                        % initial states
-DEM.M(1).f  = f;                        % equations of motion
-DEM.M(1).g  = g;                        % observation mapping
-DEM.M(1).pE = pE;                       % model parameters
-DEM.M(1).pC = diag(spm_vec(pC))*(1/128);     % variance
-DEM.M(1).V  = exp(8);                  % precision of observation noise
-DEM.M(1).W  = exp(8);                  % precision of state noise
+DEM.M(1).E  = E;                          % filtering parameters
+DEM.M(1).x  = x;                          % initial states
+DEM.M(1).f  = f;                          % equations of motion
+DEM.M(1).g  = g;                          % observation mapping
+DEM.M(1).pE = pE;                         % model parameters
+DEM.M(1).pC = diag(spm_vec(pC))*(1/128);  % variance
+DEM.M(1).V  = exp(8);                     % precision of observation noise
+DEM.M(1).W  = exp(8);                     % precision of state noise
 
 % second level causes or exogenous forcing term
 %--------------------------------------------------------------------------
-DEM.M(2).v  = 0;                        % initial causes
-DEM.M(2).V  = exp(8);                  % precision of exogenous causes
+DEM.M(2).v  = 0;                          % initial causes
+DEM.M(2).V  = exp(8);                     % precision of exogenous causes
 
 % data and known input
 %--------------------------------------------------------------------------
@@ -118,14 +120,13 @@ pE    = LAP.M(1).pE;
 pC    = LAP.M(1).pC;
 for m = 1:numel(PC)
     rC     = diag(spm_vec(PC{m}));
-    F(m,1) = spm_log_evidence(qE,qC,pE,pC,pE,rC);
+    [F(m,1), sE(m,1)] = spm_log_evidence(qE,qC,pE,pC,pE,rC);
 end
 
 % report marginal log likelihood or evidence
 %--------------------------------------------------------------------------
 F = F - min(F);
 
-close all
 spm_figure('GetWin','Model Comparison');clf;
 subplot(2,2,1), bar(F,'c')
 title('Log evidence','FontSize',16)
@@ -134,3 +135,49 @@ xlabel(model), axis square, box off
 subplot(2,2,2), bar(spm_softmax(F(:)),'c')
 title('Probability','FontSize',16)
 xlabel(model), axis square, box off
+
+%  furnish parameters with posterior expectations
+%--------------------------------------------------------------------------
+if symmetric ~= 1
+    P.a  = sE(2).a;
+    P.d  = sE(2).d;
+    P.c0 = sE(2).c0;
+    P.c2 = sE(2).c2;
+else
+    P.a  = sE(1).a;
+    P.d  = sE(1).d;
+    P.c0 = sE(1).c0;
+    P.c2 = sE(1).c2;
+end
+
+% change observation function to Noether charge
+%--------------------------------------------------------------------------
+g = @(x,v,P) x.q.^P.d.*(P.a*P.c0.*...
+    x.q.^(-P.a+P.c2).*x.q.^(-2+P.a).*x.qdot.*...
+    (2*x.q-P.a.*x.qdot));
+
+% first level state space model
+%--------------------------------------------------------------------------
+M(1).E  = E;                      	% filtering parameters
+M(1).x  = x;                       	% initial states
+M(1).f  = f;                       	% equations of motion
+M(1).g  = g;                        % observation mapping
+M(1).pE = P;                        % posterior parameters
+M(1).V  = exp(8);                 	% precision of observation noise
+M(1).W  = exp(8);                	% precision of state noise
+
+% second level causes or exogenous forcing term
+%--------------------------------------------------------------------------
+M(2).v  = 0;                       	% initial causes
+M(2).V  = exp(8);                   % precision of exogenous causes
+
+U = zeros(1,tpoints);               % exogenous input
+
+% generate Noether charge with known parameters (P)
+%==========================================================================
+DEMgen = spm_DEM_generate(M,U,P);
+
+close all
+figure
+plot(full(DEMgen.Y))
+title('Noether charge')
