@@ -148,7 +148,7 @@ pE    = LAP.M(1).pE;
 pC    = LAP.M(1).pC;
 for m = 1:numel(PC)
     rC     = diag(spm_vec(PC{m}));
-    [F(m,1)] = spm_log_evidence(qE,qC,pE,pC,pE,rC);
+    [F(m,1) sE(m,1)] = spm_log_evidence(qE,qC,pE,pC,pE,rC);
 end
 
 % report marginal log likelihood or evidence
@@ -164,8 +164,9 @@ subplot(2,2,2), bar(spm_softmax(F(:)),'c')
 title('Probability','FontSize',16)
 xlabel(model), axis square, box off
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Mathematica code to plot Noether charge 
+% Mathematica code to plot Noether charge using posterior expectations
+% sE in Matlab code above
+%--------------------------------------------------------------------------
 
 % (*Scale symmetric posterior expectations*)
 % a = 2;
