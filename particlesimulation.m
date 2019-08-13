@@ -163,3 +163,44 @@ xlabel(model), axis square, box off
 subplot(2,2,2), bar(spm_softmax(F(:)),'c')
 title('Probability','FontSize',16)
 xlabel(model), axis square, box off
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Mathematica code to plot Noether charge 
+
+% (*Scale symmetric posterior expectations*)
+% a = 2;
+% d = -2.2345*10^(-6);
+% c0 = 0.0151;
+% c2 = 0.0847;
+% c3 = -0.0565;
+% c4 = 0.0563;
+% 
+% (*Scale invariant posterior expectations*)
+% (*a =3/2;
+% d=-0.0205;
+% c0=0.0070;
+% c2=0.0183;
+% c3=-0.0174;
+% c4=0.0548;*)
+% 
+% (*Velocity*)
+% q'[t] = D[q[t], t];
+% 
+% (*5th order Lagrangian*)
+% 
+% Lagr = q[t]^(d - a) (c0 + c2 q[t]^(2 a - 2) q'[t]^2 + 
+%      c3 q[t]^(3 a - 3) q'[t]^3 + c4 q[t]^(4 a - 4) q'[t]^4);
+% 
+% (*Euler Lagrange*)
+% 
+% EL = NDSolve[{D[Lagr, q[t]] == D[D[Lagr, q'[t]], t], q[0] == 1, 
+%     q'[0] == 1}, q, {t, 0, 100}];
+% 
+% (*Noether charge*)
+% 
+% Noet = FullSimplify[(Lagr - q'[t] D[Lagr, q'[t]]) a t + 
+%     D[Lagr, q'[t]] q[t]];
+% 
+% (*plot Noether charge*)
+% Plot[Evaluate[Noet /. EL], {t, 0, 100}, 
+%  PlotRange -> All]
