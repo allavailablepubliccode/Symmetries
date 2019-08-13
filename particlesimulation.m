@@ -204,4 +204,4 @@ xlabel(model), axis square, box off
 % 
 % (*plot Noether charge*)
 % Plot[Evaluate[Noet /. EL], {t, 0, 100}, 
-%  PlotRange -> All]
+%  PlotRange -> {{0, 100}, {0.1, 0.23}}]
