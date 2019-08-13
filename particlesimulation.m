@@ -76,7 +76,7 @@ E.s  = 1/2;                                 % smoothness of fluctuations
 
 % prior parameters
 %--------------------------------------------------------------------------
-% alpha
+% alpha (set to 0 for fMRI results due to lack of ground truth value)
 if symmetric ~= 1
     pE.a  = 3/2;        % inverse square force law (Kepler exponent)
 else
