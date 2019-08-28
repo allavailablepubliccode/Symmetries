@@ -164,60 +164,60 @@ subplot(2,2,2), bar(spm_softmax(F(:)),'c')
 title('Probability','FontSize',16)
 xlabel(model), axis square, box off
 
-% Mathematica code to plot Noether charge using posterior expectations
-% sE in Matlab code above
+% run model forward with posterior densities
 %--------------------------------------------------------------------------
 
-% (*Scale symmetric posterior expectations*)
-% a = 2;
-% d = -2.2345*10^(-6);
-% c0 = 0.0151;
-% c2 = 0.0847;
-% c3 = -0.0565;
-% c4 = 0.0563;
-% 
-% (*Scale invariant posterior expectations*)
-% (*a =3/2;
-% d=-0.0205;
-% c0=0.0070;
-% c2=0.0183;
-% c3=-0.0174;
-% c4=0.0548;*)
-% 
-% (*Velocity*)
-% q'[t] = D[q[t], t];
-% 
-% (*5th order Lagrangian*)
-% 
-% Lagr = q[t]^(d - a) (c0 + c2 q[t]^(2 a - 2) q'[t]^2 + 
-%      c3 q[t]^(3 a - 3) q'[t]^3 + c4 q[t]^(4 a - 4) q'[t]^4);
-% 
-% (*Noether charge*)
-% 
-% Noet = FullSimplify[(Lagr - q'[t] D[Lagr, q'[t]]) a t + 
-%     D[Lagr, q'[t]] q[t]];
-% 
-% (*Euler Lagrange*)
-% 
-% EL = NDSolve[{D[Lagr, q[t]] == D[D[Lagr, q'[t]], t], q[0] == 1, 
-%     q'[0] == 1}, q, {t, 0, 100}];
-% 
-% (*plot Noether charge*)
-% Plot[Evaluate[Noet /. EL], {t, 0, 296}, 
-%  PlotRange -> {{0, 100}, {0.1, 0.25}}]
-% 
-% (*fMRI posterior expectations*)
-% (*a =0.8857;
-% d=-1.9747*10^(-6);
-% c0=0.0054;
-% c2=0.0348;
-% c3=-0.1152;
-% c4=0.1107;*)
-% 
-% (*Calcium imaging posterior expectations*)
-% (*a =1.2698;
-% d=1.0552*10^(-5);
-% c0=0.0164;
-% c2=0.4990;
-% c3=-0.4945;
-% c4=0.0720;*)
+g = @(x,v,P) [x.xcoord;x.ycoord;x.xcoorddot;x.ycoorddot];
+
+if symmetric==1
+    P.a  = sE(1).a;
+    P.d  = sE(1).d;
+    P.c0 = sE(1).c0;
+    P.c2 = sE(1).c2;
+    P.c3 = sE(1).c3;
+    P.c4 = sE(1).c4;
+else
+    P.a  = sE(2).a;
+    P.d  = sE(2).d;
+    P.c0 = sE(2).c0;
+    P.c2 = sE(2).c2;
+    P.c3 = sE(2).c3;
+    P.c4 = sE(2).c4;
+end
+
+M(1).E  = E;                      	% filtering parameters
+M(1).x  = x;                      	% initial states
+M(1).f  = f;                      	% equations of motion
+M(1).g  = g;                       	% observation mapping
+M(1).pE = P;                      	% model parameters
+M(1).V  = exp(16);               	% precision of observation noise
+M(1).W  = exp(16);                	% precision of state noise
+M(2).v  = 0;                    	% initial causes
+M(2).V  = exp(16);                 	% precision of exogenous causes
+
+U = zeros(1,tpoints);               % external perturbation
+
+DEMgen = spm_DEM_generate(M,U,P);   % generate data
+
+ % Noether charge
+Noeth = P.a.*P.c0.*(1:tpoints).*full(DEMgen.pU.v{1}(2,:)).^(-P.a+P.d)...
+    +P.c4.*full(DEMgen.pU.v{1}(2,:)).^(-4+3.*P.a+P.d).*...
+    full(DEMgen.pU.v{1}(4,:)).^3.*(4.*full(DEMgen.pU.v{1}(2,:))-3.*...
+    P.a.*(1:tpoints).*full(DEMgen.pU.v{1}(4,:)))+P.c3.*...
+    full(DEMgen.pU.v{1}(2,:)).^(-3+2.*P.a+P.d).*...
+    full(DEMgen.pU.v{1}(4,:)).^2.*(3.*full(DEMgen.pU.v{1}(2,:))-...
+    2.*P.a.*(1:tpoints).*full(DEMgen.pU.v{1}(4,:)))+P.c2.*...
+    full(DEMgen.pU.v{1}(2,:)).^(-2+P.a+P.d).*...
+    full(DEMgen.pU.v{1}(4,:)).*(2.*full(DEMgen.pU.v{1}(2,:))-P.a.*...
+    (1:tpoints).*full(DEMgen.pU.v{1}(4,:)));
+
+figure;
+plot(Noeth(16:end))
+title('Noether charge')
+
+if symmetric == 1
+    ylim([-0.35 -0.25])
+else
+   ylim([-0.15 -0.05])
+end
+   
