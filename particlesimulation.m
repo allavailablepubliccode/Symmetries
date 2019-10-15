@@ -7,6 +7,8 @@ function particlesimulation(symmetric)
 % that is acted upon by a force that varies inversely as the square of
 % position, resulting in an elliptical trajectory
 
+rng(0,'twister')
+
 if symmetric == 1
     disp('ground truth - scale symmetric')
 else
@@ -37,7 +39,7 @@ x.ycoorddot = 1;                            % y velocity
 %--------------------------------------------------------------------------
 g = @(x,v,P) [x.xcoord;x.ycoord];
 
-% equation of motion (5th order Lagrangian)
+% equation of motion (Euler-Lagrange via 5th order Lagrangian)
 %--------------------------------------------------------------------------
 f = @(x,v,P) [x.xcoorddot;...
     x.ycoorddot;...
@@ -92,12 +94,12 @@ pE.c4 = 1/64;
 
 % prior variance
 %--------------------------------------------------------------------------
-pC.a  = 0;             
-pC.d  = 1;
-pC.c0 = 1;
-pC.c2 = 1;
-pC.c3 = 1;
-pC.c4 = 1;
+pC.a  = 0;
+pC.d  = 16;
+pC.c0 = 16;
+pC.c2 = 16;
+pC.c3 = 16;
+pC.c4 = 16;
 
 % first level state space model
 %--------------------------------------------------------------------------
@@ -106,12 +108,12 @@ DEM.M(1).x  = x;                      	% initial states
 DEM.M(1).f  = f;                      	% equations of motion
 DEM.M(1).g  = g;                       	% observation mapping
 DEM.M(1).pE = pE;                      	% model parameters
-DEM.M(1).pC = diag(spm_vec(pC))*16;    	% variance
+DEM.M(1).pC = diag(spm_vec(pC));    	% variance
 DEM.M(1).V  = exp(9);               	% precision of observation noise
 DEM.M(1).W  = exp(9);                	% precision of state noise
 
 % n.b. precisions of observation and state noise set to exp(6) for fMRI
-% data due to higher noise assumption
+% and calcium imaging data due to higher noise assumption
 
 % second level causes or exogenous forcing term
 %--------------------------------------------------------------------------
@@ -123,8 +125,8 @@ DEM.M(2).V  = exp(9);                 	% precision of exogenous causes
 DEM.Y = Y;                              % data to model
 DEM.U = zeros(1,tpoints);               % zero driving input
 
-% n.b. driving input set to rand(1,tpoints) for fMRI data to model
-% afferent neural fluctuations
+% n.b. driving input set to rand(1,tpoints) for fMRI and calcium imaging
+% data to model neural fluctuations
 
 % Inversion using generalised filtering
 %==========================================================================
@@ -166,9 +168,12 @@ xlabel(model), axis square, box off
 
 % run model forward with posterior densities
 %--------------------------------------------------------------------------
+tpoints = 200;
 
+% extract velocities for Noether charge
 g = @(x,v,P) [x.xcoord;x.ycoord;x.xcoorddot;x.ycoorddot];
 
+% furnish parameters with posterior densities
 if symmetric==1
     P.a  = sE(1).a;
     P.d  = sE(1).d;
@@ -185,39 +190,112 @@ else
     P.c4 = sE(2).c4;
 end
 
+% turn down noise to see pure functional forms
+
 M(1).E  = E;                      	% filtering parameters
 M(1).x  = x;                      	% initial states
 M(1).f  = f;                      	% equations of motion
 M(1).g  = g;                       	% observation mapping
 M(1).pE = P;                      	% model parameters
-M(1).V  = exp(16);               	% precision of observation noise
-M(1).W  = exp(16);                	% precision of state noise
+M(1).V  = exp(30);               	% precision of observation noise
+M(1).W  = exp(30);                	% precision of state noise
 M(2).v  = 0;                    	% initial causes
-M(2).V  = exp(16);                 	% precision of exogenous causes
+M(2).V  = exp(30);                 	% precision of exogenous causes
 
 U = zeros(1,tpoints);               % external perturbation
 
 DEMgen = spm_DEM_generate(M,U,P);   % generate data
 
- % Noether charge
-Noeth = P.a.*P.c0.*(1:tpoints).*full(DEMgen.pU.v{1}(2,:)).^(-P.a+P.d)...
-    +P.c4.*full(DEMgen.pU.v{1}(2,:)).^(-4+3.*P.a+P.d).*...
-    full(DEMgen.pU.v{1}(4,:)).^3.*(4.*full(DEMgen.pU.v{1}(2,:))-3.*...
-    P.a.*(1:tpoints).*full(DEMgen.pU.v{1}(4,:)))+P.c3.*...
-    full(DEMgen.pU.v{1}(2,:)).^(-3+2.*P.a+P.d).*...
-    full(DEMgen.pU.v{1}(4,:)).^2.*(3.*full(DEMgen.pU.v{1}(2,:))-...
-    2.*P.a.*(1:tpoints).*full(DEMgen.pU.v{1}(4,:)))+P.c2.*...
-    full(DEMgen.pU.v{1}(2,:)).^(-2+P.a+P.d).*...
-    full(DEMgen.pU.v{1}(4,:)).*(2.*full(DEMgen.pU.v{1}(2,:))-P.a.*...
-    (1:tpoints).*full(DEMgen.pU.v{1}(4,:)));
+% Noether charge
+Noeth = P.a.*P.c0.*(1:tpoints).*full(DEMgen.Y(2,:)).^(-P.a+P.d)...
+    +P.c4.*full(DEMgen.Y(2,:)).^(-4+3.*P.a+P.d).*...
+    full(DEMgen.Y(4,:)).^3.*(4.*full(DEMgen.Y(2,:))-3.*...
+    P.a.*(1:tpoints).*full(DEMgen.Y(4,:)))+P.c3.*...
+    full(DEMgen.Y(2,:)).^(-3+2.*P.a+P.d).*...
+    full(DEMgen.Y(4,:)).^2.*(3.*full(DEMgen.Y(2,:))-...
+    2.*P.a.*(1:tpoints).*full(DEMgen.Y(4,:)))+P.c2.*...
+    full(DEMgen.Y(2,:)).^(-2+P.a+P.d).*...
+    full(DEMgen.Y(4,:)).*(2.*full(DEMgen.Y(2,:))-P.a.*...
+    (1:tpoints).*full(DEMgen.Y(4,:)));
 
 figure;
-plot(Noeth(16:end))
+plot(Noeth(101:end))       
 title('Noether charge')
 
 if symmetric == 1
-    ylim([-0.35 -0.25])
+    ylim([-0.365 -0.245])
 else
-   ylim([-0.15 -0.05])
+    ylim([-0.27 -0.15])
 end
-   
+
+
+% Monkey
+%--------------------------------------------------------------------------
+clear P
+P.a  = 0.886;
+P.d  = -5.264e-06;
+P.c0 = 0.005;
+P.c2 = 0.035;
+P.c3 = -0.115;
+P.c4 = 0.111;
+
+M(1).pE = P;
+
+tpoints = 400;
+
+U = zeros(1,tpoints);             
+
+DEMgen = spm_DEM_generate(M,U,P);  
+
+Noeth = P.a.*P.c0.*(1:tpoints).*full(DEMgen.Y(2,:)).^(-P.a+P.d)...
+    +P.c4.*full(DEMgen.Y(2,:)).^(-4+3.*P.a+P.d).*...
+    full(DEMgen.Y(4,:)).^3.*(4.*full(DEMgen.Y(2,:))-3.*...
+    P.a.*(1:tpoints).*full(DEMgen.Y(4,:)))+P.c3.*...
+    full(DEMgen.Y(2,:)).^(-3+2.*P.a+P.d).*...
+    full(DEMgen.Y(4,:)).^2.*(3.*full(DEMgen.Y(2,:))-...
+    2.*P.a.*(1:tpoints).*full(DEMgen.Y(4,:)))+P.c2.*...
+    full(DEMgen.Y(2,:)).^(-2+P.a+P.d).*...
+    full(DEMgen.Y(4,:)).*(2.*full(DEMgen.Y(2,:))-P.a.*...
+    (1:tpoints).*full(DEMgen.Y(4,:)));
+
+figure;
+plot(Noeth(101:end))    
+title('Noether charge, Monkey')
+
+ylim([0 0.1])
+
+
+% Mice
+%--------------------------------------------------------------------------
+clear P
+P.a  = 1.855;
+P.d  = 1.055e-05;
+P.c0 = 0.016;
+P.c2 = 0.499;
+P.c3 = -0.495;
+P.c4 = 0.072;
+
+M(1).pE = P;
+
+tpoints = 200;
+
+U = zeros(1,tpoints);              
+
+DEMgen = spm_DEM_generate(M,U,P);  
+
+Noeth = P.a.*P.c0.*(1:tpoints).*full(DEMgen.Y(2,:)).^(-P.a+P.d)...
+    +P.c4.*full(DEMgen.Y(2,:)).^(-4+3.*P.a+P.d).*...
+    full(DEMgen.Y(4,:)).^3.*(4.*full(DEMgen.Y(2,:))-3.*...
+    P.a.*(1:tpoints).*full(DEMgen.Y(4,:)))+P.c3.*...
+    full(DEMgen.Y(2,:)).^(-3+2.*P.a+P.d).*...
+    full(DEMgen.Y(4,:)).^2.*(3.*full(DEMgen.Y(2,:))-...
+    2.*P.a.*(1:tpoints).*full(DEMgen.Y(4,:)))+P.c2.*...
+    full(DEMgen.Y(2,:)).^(-2+P.a+P.d).*...
+    full(DEMgen.Y(4,:)).*(2.*full(DEMgen.Y(2,:))-P.a.*...
+    (1:tpoints).*full(DEMgen.Y(4,:)));
+
+figure;
+plot(Noeth(101:end))        
+title('Noether charge, Mice')
+
+ylim([-2.3 -2.1])
