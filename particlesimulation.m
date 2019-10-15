@@ -220,7 +220,7 @@ Noeth = P.a.*P.c0.*(1:tpoints).*full(DEMgen.Y(2,:)).^(-P.a+P.d)...
 
 figure;
 plot(Noeth(101:end))       
-title('Noether charge')
+title('Noether charge, particle')
 
 if symmetric == 1
     ylim([-0.365 -0.245])
@@ -228,74 +228,73 @@ else
     ylim([-0.27 -0.15])
 end
 
-
-% Monkey
-%--------------------------------------------------------------------------
-clear P
-P.a  = 0.886;
-P.d  = -5.264e-06;
-P.c0 = 0.005;
-P.c2 = 0.035;
-P.c3 = -0.115;
-P.c4 = 0.111;
-
-M(1).pE = P;
-
-tpoints = 400;
-
-U = zeros(1,tpoints);             
-
-DEMgen = spm_DEM_generate(M,U,P);  
-
-Noeth = P.a.*P.c0.*(1:tpoints).*full(DEMgen.Y(2,:)).^(-P.a+P.d)...
-    +P.c4.*full(DEMgen.Y(2,:)).^(-4+3.*P.a+P.d).*...
-    full(DEMgen.Y(4,:)).^3.*(4.*full(DEMgen.Y(2,:))-3.*...
-    P.a.*(1:tpoints).*full(DEMgen.Y(4,:)))+P.c3.*...
-    full(DEMgen.Y(2,:)).^(-3+2.*P.a+P.d).*...
-    full(DEMgen.Y(4,:)).^2.*(3.*full(DEMgen.Y(2,:))-...
-    2.*P.a.*(1:tpoints).*full(DEMgen.Y(4,:)))+P.c2.*...
-    full(DEMgen.Y(2,:)).^(-2+P.a+P.d).*...
-    full(DEMgen.Y(4,:)).*(2.*full(DEMgen.Y(2,:))-P.a.*...
-    (1:tpoints).*full(DEMgen.Y(4,:)));
-
-figure;
-plot(Noeth(101:end))    
-title('Noether charge, Monkey')
-
-ylim([0 0.1])
-
-
-% Mice
-%--------------------------------------------------------------------------
-clear P
-P.a  = 1.855;
-P.d  = 1.055e-05;
-P.c0 = 0.016;
-P.c2 = 0.499;
-P.c3 = -0.495;
-P.c4 = 0.072;
-
-M(1).pE = P;
-
-tpoints = 200;
-
-U = zeros(1,tpoints);              
-
-DEMgen = spm_DEM_generate(M,U,P);  
-
-Noeth = P.a.*P.c0.*(1:tpoints).*full(DEMgen.Y(2,:)).^(-P.a+P.d)...
-    +P.c4.*full(DEMgen.Y(2,:)).^(-4+3.*P.a+P.d).*...
-    full(DEMgen.Y(4,:)).^3.*(4.*full(DEMgen.Y(2,:))-3.*...
-    P.a.*(1:tpoints).*full(DEMgen.Y(4,:)))+P.c3.*...
-    full(DEMgen.Y(2,:)).^(-3+2.*P.a+P.d).*...
-    full(DEMgen.Y(4,:)).^2.*(3.*full(DEMgen.Y(2,:))-...
-    2.*P.a.*(1:tpoints).*full(DEMgen.Y(4,:)))+P.c2.*...
-    full(DEMgen.Y(2,:)).^(-2+P.a+P.d).*...
-    full(DEMgen.Y(4,:)).*(2.*full(DEMgen.Y(2,:))-P.a.*...
-    (1:tpoints).*full(DEMgen.Y(4,:)));
-
-figure;
-plot(Noeth(101:end))        
-title('Noether charge, Mice')
-
-ylim([-2.3 -2.1])
+% % Monkey
+% %--------------------------------------------------------------------------
+% clear P
+% P.a  = 0.886;
+% P.d  = -5.264e-06;
+% P.c0 = 0.005;
+% P.c2 = 0.035;
+% P.c3 = -0.115;
+% P.c4 = 0.111;
+% 
+% M(1).pE = P;
+% 
+% tpoints = 400;
+% 
+% U = zeros(1,tpoints);             
+% 
+% DEMgen = spm_DEM_generate(M,U,P);  
+% 
+% Noeth = P.a.*P.c0.*(1:tpoints).*full(DEMgen.Y(2,:)).^(-P.a+P.d)...
+%     +P.c4.*full(DEMgen.Y(2,:)).^(-4+3.*P.a+P.d).*...
+%     full(DEMgen.Y(4,:)).^3.*(4.*full(DEMgen.Y(2,:))-3.*...
+%     P.a.*(1:tpoints).*full(DEMgen.Y(4,:)))+P.c3.*...
+%     full(DEMgen.Y(2,:)).^(-3+2.*P.a+P.d).*...
+%     full(DEMgen.Y(4,:)).^2.*(3.*full(DEMgen.Y(2,:))-...
+%     2.*P.a.*(1:tpoints).*full(DEMgen.Y(4,:)))+P.c2.*...
+%     full(DEMgen.Y(2,:)).^(-2+P.a+P.d).*...
+%     full(DEMgen.Y(4,:)).*(2.*full(DEMgen.Y(2,:))-P.a.*...
+%     (1:tpoints).*full(DEMgen.Y(4,:)));
+% 
+% figure;
+% plot(Noeth(101:end))    
+% title('Noether charge, Monkey')
+% 
+% ylim([0 0.1])
+% 
+% 
+% % Mice
+% %--------------------------------------------------------------------------
+% clear P
+% P.a  = 1.855;
+% P.d  = 1.055e-05;
+% P.c0 = 0.016;
+% P.c2 = 0.499;
+% P.c3 = -0.495;
+% P.c4 = 0.072;
+% 
+% M(1).pE = P;
+% 
+% tpoints = 200;
+% 
+% U = zeros(1,tpoints);              
+% 
+% DEMgen = spm_DEM_generate(M,U,P);  
+% 
+% Noeth = P.a.*P.c0.*(1:tpoints).*full(DEMgen.Y(2,:)).^(-P.a+P.d)...
+%     +P.c4.*full(DEMgen.Y(2,:)).^(-4+3.*P.a+P.d).*...
+%     full(DEMgen.Y(4,:)).^3.*(4.*full(DEMgen.Y(2,:))-3.*...
+%     P.a.*(1:tpoints).*full(DEMgen.Y(4,:)))+P.c3.*...
+%     full(DEMgen.Y(2,:)).^(-3+2.*P.a+P.d).*...
+%     full(DEMgen.Y(4,:)).^2.*(3.*full(DEMgen.Y(2,:))-...
+%     2.*P.a.*(1:tpoints).*full(DEMgen.Y(4,:)))+P.c2.*...
+%     full(DEMgen.Y(2,:)).^(-2+P.a+P.d).*...
+%     full(DEMgen.Y(4,:)).*(2.*full(DEMgen.Y(2,:))-P.a.*...
+%     (1:tpoints).*full(DEMgen.Y(4,:)));
+% 
+% figure;
+% plot(Noeth(101:end))        
+% title('Noether charge, Mice')
+% 
+% ylim([-2.3 -2.1])
